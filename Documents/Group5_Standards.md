@@ -5,16 +5,16 @@
 ## 1. Work Item Naming (Epics, Features, Stories, Spikes)
 
 - **Epic**: `EPIC - [Module Name]`
-  - Example: `EPIC - User Authentication`
+  - 
 
 - **Feature**: `FEAT - [Your Name] - [Feature Description]`
-  - Example: `FEAT - Amira - Login Form`
+  -
 
 - **User Story**: `US - [What the user does]`
-  - Example: `US - User can reset password`
+  - 
 
 - **Spike**: `SPIKE - [Research topic]`
-  - Example: `SPIKE - Compare database options`
+  - 
 
 ---
 
@@ -31,6 +31,7 @@
 - Folders:
 - Files: 
 
+---
 
 ## 4. Work Item Attributes
 
