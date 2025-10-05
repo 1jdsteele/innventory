@@ -26,14 +26,7 @@
 
 ---
 
-## 3. File & Folder Naming (Optional)
-
-- Folders:
-- Files: 
-
----
-
-## 4. Work Item Attributes
+## 3. Work Item Attributes
 
 - Assign to correct **Sprint**
 - Link to the proper **Feature or Epic**
