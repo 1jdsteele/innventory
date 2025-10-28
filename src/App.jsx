@@ -9,7 +9,8 @@ import {
   Typography,
 } from "@mui/material";
 import { Route, BrowserRouter as Router, Routes } from "react-router-dom";
-import AddInventory from "./AddInventory";
+// import AddInventory from "./AddInventory";
+import InventoryPage from "./pages/InventoryPage";
 
 function App() {
   const [count, setCount] = useState(0);
@@ -23,8 +24,11 @@ function App() {
         </Toolbar>
       </AppBar>
       <Container sx={{ mt: 4 }}>
-        <Routes>
+        {/* <Routes>
           <Route path="/" element={<AddInventory />} />
+        </Routes> */}
+        <Routes>
+          <Route path="/" element={<InventoryPage />} />
         </Routes>
       </Container>
     </Router>
