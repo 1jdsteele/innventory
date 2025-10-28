@@ -22,13 +22,11 @@ export default function InventoryPage() {
   };
 
   const onUpdate = (id, patch) => {
-    setItems((prev) =>
-      prev.map((it) => (it.id === id ? { ...it, ...patch } : it))
-    );
+    // HERE Hein will make the logic on how to update
   };
 
   const onDelete = (id) => {
-    setItems((prev) => prev.filter((it) => it.id !== id));
+    // HERE VInce will make delete logic
   };
 
   const hasItems = useMemo(() => items.length > 0, [items]);
