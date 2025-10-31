@@ -21,9 +21,13 @@ export default function InventoryPage() {
     setItems((prev) => [newItem, ...prev]);
   };
 
-  const onUpdate = (id, patch) => {
-    // HERE Hein will make the logic on how to update
-  };
+  // Updaing the inventory name and amount
+const onUpdate = (id, patch) => {
+  setItems(prev =>
+    prev.map(item => (item.id === id ? { ...item, ...patch } : item))
+  );
+};
+
 
   const onDelete = (id) => {
     // HERE VInce will make delete logic
