@@ -10,6 +10,7 @@ import {
 } from "@mui/material";
 import { Route, BrowserRouter as Router, Routes } from "react-router-dom";
 // import AddInventory from "./AddInventory";
+import DatabaseExperimentPage from "./pages/DatabaseExperimentPage";
 import InventoryPage from "./pages/InventoryPage";
 
 function App() {
@@ -23,12 +24,21 @@ function App() {
           <Typography variant="h6">Hotel Inventory</Typography>
         </Toolbar>
       </AppBar>
-      <Container sx={{ mt: 4 }}>
-        {/* <Routes>
+      {/* <Container sx={{ mt: 4 }}> */}
+      {/* <Routes>
           <Route path="/" element={<AddInventory />} />
         </Routes> */}
+      {/* <Routes>
+          <Route path="/" element={<InventoryPage />} />
+        </Routes>
+      </Container> */}
+      <Container sx={{ mt: 4 }}>
         <Routes>
           <Route path="/" element={<InventoryPage />} />
+          <Route
+            path="/database-experiment"
+            element={<DatabaseExperimentPage />}
+          />
         </Routes>
       </Container>
     </Router>
@@ -36,3 +46,52 @@ function App() {
 }
 
 export default App;
+// import {
+//   AppBar,
+//   Button,
+//   Container,
+//   CssBaseline,
+//   Toolbar,
+//   Typography,
+// } from "@mui/material";
+// import { Link, Route, BrowserRouter as Router, Routes } from "react-router-dom";
+// import "./App.css";
+
+// import DatabaseExperimentPage from "./pages/DatabaseExperimentPage";
+// import InventoryPage from "./pages/InventoryPage";
+
+// function App() {
+//   return (
+//     <Router>
+//       <CssBaseline />
+
+//       <AppBar position="static">
+//         <Toolbar>
+//           <Typography variant="h6" sx={{ flexGrow: 1 }}>
+//             Hotel Inventory
+//           </Typography>
+
+//           {/* Simple navigation */}
+//           <Button color="inherit" component={Link} to="/">
+//             Inventory
+//           </Button>
+//           <Button color="inherit" component={Link} to="/database-experiment">
+//             DB Experiment
+//           </Button>
+//         </Toolbar>
+//       </AppBar>
+
+//       <Container sx={{ mt: 4 }}>
+//         <Routes>
+//           <Route path="/" element={<InventoryPage />} />
+//           <Route
+//             path="/database-experiment"
+//             element={<DatabaseExperimentPage />}
+//           />
+//         </Routes>
+//       </Container>
+//     </Router>
+//   );
+// }
+
+// export default App;

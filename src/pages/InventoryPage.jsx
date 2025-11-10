@@ -22,12 +22,11 @@ export default function InventoryPage() {
   };
 
   // Updaing the inventory name and amount
-const onUpdate = (id, patch) => {
-  setItems(prev =>
-    prev.map(item => (item.id === id ? { ...item, ...patch } : item))
-  );
-};
-
+  const onUpdate = (id, patch) => {
+    setItems((prev) =>
+      prev.map((item) => (item.id === id ? { ...item, ...patch } : item))
+    );
+  };
 
   const onDelete = (id) => {
     
