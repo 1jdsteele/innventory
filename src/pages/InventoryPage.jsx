@@ -29,8 +29,10 @@ export default function InventoryPage() {
   };
 
   const onDelete = (id) => {
+    
     // HERE VInce will make delete logic
-    //use setItems and filter by ID
+    // use setItems and filter by ID
+    setItems((prevItems) => prevItems.filter((item) => item.id != id))
   };
 
   const hasItems = useMemo(() => items.length > 0, [items]);
