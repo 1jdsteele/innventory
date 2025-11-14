@@ -4,13 +4,16 @@ import {
   Divider,
   Paper,
   Typography,
+  Stack
 } from "@mui/material";
 import { useMemo, useState } from "react";
 import AddItemForm from "../components/AddItemForm";
 import ItemsList from "../components/ItemsList";
+import SearchBar from "../components/SearchBar"; 
 
 export default function InventoryPage() {
   const [items, setItems] = useState([]);
+  const [searchTerm, setSearchTerm] = useState(" ");
 
   const onAdd = ({ name, quantity }) => {
     const newItem = {
@@ -35,7 +38,13 @@ export default function InventoryPage() {
     setItems((prevItems) => prevItems.filter((item) => item.id != id))
   };
 
-  const hasItems = useMemo(() => items.length > 0, [items]);
+    const filteredItems = useMemo(() => {
+    const q = searchTerm.trim().toLowerCase();
+    if (!q) return items;
+    return items.filter((item) => item.name.toLowerCase().includes(q));
+  }, [items, searchTerm]);
+
+  const hasItems = useMemo(() => filteredItems.length > 0, [filteredItems]);
 
   return (
     <>
@@ -45,12 +54,13 @@ export default function InventoryPage() {
         <Typography variant="h4" gutterBottom>
           Current Inventory
         </Typography>
-
+           <Stack spacing={2} sx={{ mb: 3 }}>
+          <SearchBar value={searchTerm} onChange={setSearchTerm} />
         <Paper sx={{ mb: 3, p: 2 }}>
           {hasItems ? (
             <>
               <ItemsList
-                items={items}
+                items={filteredItems}
                 onUpdate={onUpdate}
                 onDelete={onDelete}
               />
@@ -63,7 +73,7 @@ export default function InventoryPage() {
             <Typography color="text.secondary">No items yet.</Typography>
           )}
         </Paper>
-
+        </Stack>
         <AddItemForm onAdd={onAdd} />
       </Container>
     </>
