@@ -43,7 +43,7 @@ export default function InventoryPage() {
         setLoading(true);
         setError(null);
         const { data, error } = await supabase
-          .from("Inventory")
+          .from("inventory")
           .select("id,item_name,item_quantity,created_at")
           .order("id", { ascending: false });
         if (error) throw error;
@@ -81,7 +81,7 @@ export default function InventoryPage() {
       setError(null);
 
       const { data, error } = await supabase
-        .from("Inventory")
+        .from("inventory")
         .insert([
           {
             item_name: trimmed,
