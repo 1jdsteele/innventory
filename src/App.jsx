@@ -22,7 +22,7 @@ function App() {
       <CssBaseline /> {/* Resets browser default styles */}
       <AppBar position="static">
         <Toolbar>
-          <Typography variant="h6">Hotel Inventory</Typography>
+          <Typography variant="h6">Hilbert's Innventory</Typography>
         </Toolbar>
       </AppBar>
       {/* <Container sx={{ mt: 4 }}> */}
@@ -40,15 +40,9 @@ function App() {
             path="/database-experiment"
             element={<DatabaseExperimentPage />}
           />
-          
-          <Route
-            path="/login" 
-            element={<Login />}
-          />
-          <Route 
-            path="/signup"
-            element={<Signup />}
-          />
+
+          <Route path="/login" element={<Login />} />
+          <Route path="/signup" element={<Signup />} />
         </Routes>
       </Container>
     </Router>
