@@ -16,7 +16,7 @@ import { supabase } from "../services/supabaseClient";
 
 export default function InventoryPage() {
   const [items, setItems] = useState([]);
-  const [searchTerm, setSearchTerm] = useState(" ");
+  const [searchTerm, setSearchTerm] = useState("");
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState(null);
@@ -122,9 +122,15 @@ export default function InventoryPage() {
     <>
       <CssBaseline />
       <Container sx={{ mt: 4 }}>
-        <Typography variant="h4" gutterBottom>
-          Current Inventory
-        </Typography>
+        {searchTerm == "" ? (
+          <Typography variant="h4" gutterBottom>
+            Current Inventory
+          </Typography>
+        ) : (
+          <Typography variant="h4" gutterBottom>
+            Search results:
+          </Typography>
+        )}
 
         <Stack spacing={2} sx={{ mb: 3 }}>
           <SearchBar value={searchTerm} onChange={setSearchTerm} />
