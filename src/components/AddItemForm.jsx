@@ -1,7 +1,7 @@
 import { Button, Paper, Stack, TextField } from "@mui/material";
 import { useState } from "react";
 
-export default function AddItemForm({ onAdd }) {
+export default function AddItemForm({ onAdd, nameRef }) {
   const [itemName, setItemName] = useState("");
   const [quantity, setQuantity] = useState("");
 
@@ -11,6 +11,9 @@ export default function AddItemForm({ onAdd }) {
     onAdd({ name: itemName, quantity });
     setItemName("");
     setQuantity("");
+
+    // re-focus after submission
+    nameRef?.current?.focus();
   };
 
   return (
@@ -22,6 +25,7 @@ export default function AddItemForm({ onAdd }) {
             value={itemName}
             onChange={(e) => setItemName(e.target.value)}
             fullWidth
+            inputRef={nameRef} // ⭐ use the parent ref here
           />
           <TextField
             label="Quantity"

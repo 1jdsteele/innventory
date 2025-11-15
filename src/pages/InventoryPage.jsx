@@ -8,8 +8,9 @@ import {
   Stack,
   Typography,
 } from "@mui/material";
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import AddItemForm from "../components/AddItemForm";
+import DashboardHeader from "../components/DashboardHeader";
 import ItemsList from "../components/ItemsList";
 import SearchBar from "../components/SearchBar";
 import { supabase } from "../services/supabaseClient";
@@ -20,6 +21,19 @@ export default function InventoryPage() {
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState(null);
+
+  // ref to the bottom section (AddItemForm)
+  const bottomRef = useRef(null);
+  const nameFieldRef = useRef(null);
+
+  const scrollToBottom = () => {
+    bottomRef.current?.scrollIntoView({ behavior: "smooth" });
+    console.log("hit it");
+    setTimeout(() => {
+      nameFieldRef.current?.focus();
+    }, 400);
+    console.log("hit the bottom");
+  };
 
   // READ: load rows on mount (newest first)
   useEffect(() => {
@@ -122,6 +136,7 @@ export default function InventoryPage() {
     <>
       <CssBaseline />
       <Container sx={{ mt: 4 }}>
+        <DashboardHeader title="XXX" onScrollToBottom={scrollToBottom} />
         {searchTerm == "" ? (
           <Typography variant="h4" gutterBottom>
             Current Inventory
@@ -131,7 +146,6 @@ export default function InventoryPage() {
             Search results:
           </Typography>
         )}
-
         <Stack spacing={2} sx={{ mb: 3 }}>
           <SearchBar value={searchTerm} onChange={setSearchTerm} />
           {error && (
@@ -163,7 +177,9 @@ export default function InventoryPage() {
             )}
           </Paper>
         </Stack>
-        <AddItemForm onAdd={onAdd} />
+        <div ref={bottomRef}>
+          <AddItemForm onAdd={onAdd} nameRef={nameFieldRef} />
+        </div>{" "}
       </Container>
     </>
   );
