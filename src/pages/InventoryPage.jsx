@@ -1,20 +1,22 @@
 import {
+  Alert,
+  CircularProgress,
   Container,
   CssBaseline,
   Divider,
   Paper,
-  Typography,
-  Alert,
-  CircularProgress,
   Stack,
+  Typography,
 } from "@mui/material";
 import { useEffect, useMemo, useState } from "react";
 import AddItemForm from "../components/AddItemForm";
 import ItemsList from "../components/ItemsList";
+import SearchBar from "../components/SearchBar";
 import { supabase } from "../services/supabaseClient";
 
 export default function InventoryPage() {
   const [items, setItems] = useState([]);
+  const [searchTerm, setSearchTerm] = useState(" ");
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState(null);
@@ -108,7 +110,13 @@ export default function InventoryPage() {
     setItems((prev) => prev.filter((item) => item.id !== id));
   };
 
-  const hasItems = useMemo(() => items.length > 0, [items]);
+  const filteredItems = useMemo(() => {
+    const q = searchTerm.trim().toLowerCase();
+    if (!q) return items;
+    return items.filter((item) => item.name.toLowerCase().includes(q));
+  }, [items, searchTerm]);
+
+  const hasItems = useMemo(() => filteredItems.length > 0, [filteredItems]);
 
   return (
     <>
@@ -118,33 +126,38 @@ export default function InventoryPage() {
           Current Inventory
         </Typography>
 
-        {error && (
-          <Alert severity="error" sx={{ mb: 2 }}>
-            {error}
-          </Alert>
-        )}
-
-        <Paper sx={{ mb: 3, p: 2, minHeight: 120 }}>
-          {loading ? (
-            <Stack direction="row" spacing={1} alignItems="center">
-              <CircularProgress size={20} />
-              <Typography color="text.secondary">Loading…</Typography>
-            </Stack>
-          ) : hasItems ? (
-            <>
-              <ItemsList items={items} onUpdate={onUpdate} onDelete={onDelete} />
-              <Divider sx={{ my: 2 }} />
-              <Typography variant="body2" color="text.secondary">
-                Total items: {items.length}
-              </Typography>
-            </>
-          ) : (
-            <Typography color="text.secondary">No items yet.</Typography>
+        <Stack spacing={2} sx={{ mb: 3 }}>
+          <SearchBar value={searchTerm} onChange={setSearchTerm} />
+          {error && (
+            <Alert severity="error" sx={{ mb: 2 }}>
+              {error}
+            </Alert>
           )}
-        </Paper>
 
-        {/* If your AddItemForm supports a loading prop, pass saving; otherwise omit */}
-        <AddItemForm onAdd={onAdd} saving={saving} />
+          <Paper sx={{ mb: 3, p: 2, minHeight: 120 }}>
+            {loading ? (
+              <Stack direction="row" spacing={1} alignItems="center">
+                <CircularProgress size={20} />
+                <Typography color="text.secondary">Loading…</Typography>
+              </Stack>
+            ) : hasItems ? (
+              <>
+                <ItemsList
+                  items={filteredItems}
+                  onUpdate={onUpdate}
+                  onDelete={onDelete}
+                />
+                <Divider sx={{ my: 2 }} />
+                <Typography variant="body2" color="text.secondary">
+                  Total items: {items.length}
+                </Typography>
+              </>
+            ) : (
+              <Typography color="text.secondary">No items yet.</Typography>
+            )}
+          </Paper>
+        </Stack>
+        <AddItemForm onAdd={onAdd} />
       </Container>
     </>
   );
