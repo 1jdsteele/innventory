@@ -22,33 +22,63 @@ export default function InventoryPage() {
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState(null);
 
+  // org / employee context
+  const [orgId, setOrgId] = useState(null);
+
   // ref to the bottom section (AddItemForm)
   const bottomRef = useRef(null);
   const nameFieldRef = useRef(null);
 
   const scrollToBottom = () => {
     bottomRef.current?.scrollIntoView({ behavior: "smooth" });
-    console.log("hit it");
     setTimeout(() => {
       nameFieldRef.current?.focus();
     }, 400);
-    console.log("hit the bottom");
   };
 
-  // READ: load rows on mount (newest first)
+  // On mount: read currentEmployee from localStorage and extract orgId
   useEffect(() => {
+    try {
+      const raw = localStorage.getItem("currentEmployee");
+      if (!raw) {
+        setError("No logged-in employee found. Please log in again.");
+        setLoading(false);
+        return;
+      }
+      const emp = JSON.parse(raw);
+      if (!emp.organizationId) {
+        setError("Your account is not linked to an organization.");
+        setLoading(false);
+        return;
+      }
+      setOrgId(emp.organizationId);
+    } catch (e) {
+      console.error(e);
+      setError("Failed to read employee info. Please log in again.");
+      setLoading(false);
+    }
+  }, []);
+
+  // READ: load rows for this organization (newest first)
+  useEffect(() => {
+    if (!orgId) return; // wait until orgId is known
+
     let alive = true;
+
     const load = async () => {
       try {
         setLoading(true);
         setError(null);
+
         const { data, error } = await supabase
           .from("inventory")
           .select("id,item_name,item_quantity,created_at")
+          .eq("organization_id", orgId)
           .order("id", { ascending: false });
+
         if (error) throw error;
+
         if (alive) {
-          // map DB -> UI shape used by ItemsList/ItemRow
           const ui = (data ?? []).map((r) => ({
             id: r.id,
             name: r.item_name,
@@ -64,17 +94,24 @@ export default function InventoryPage() {
         if (alive) setLoading(false);
       }
     };
+
     load();
+
     return () => {
       alive = false;
     };
-  }, []);
+  }, [orgId]);
 
   // CREATE: insert then prepend to list
   const onAdd = async ({ name, quantity }) => {
     const trimmed = String(name ?? "").trim();
     const qtyNum = Number(quantity);
     if (!trimmed || Number.isNaN(qtyNum)) return;
+
+    if (!orgId) {
+      setError("Missing organization. Please log in again.");
+      return;
+    }
 
     try {
       setSaving(true);
@@ -86,16 +123,14 @@ export default function InventoryPage() {
           {
             item_name: trimmed,
             item_quantity: qtyNum,
-            // add organization if your form supports it:
-            // organization: org || null,
+            organization_id: orgId,
           },
         ])
-        .select("id,item_name,item_quantity, created_at")
+        .select("id,item_name,item_quantity,created_at")
         .single();
 
       if (error) throw error;
 
-      // map DB -> UI shape and prepend
       const inserted = {
         id: data.id,
         name: data.item_name,
@@ -111,7 +146,7 @@ export default function InventoryPage() {
     }
   };
 
-  // Local update/delete remain as-is (wire to Supabase later if you like)
+  // Local update/delete remain in-memory for now
   const onUpdate = (id, patch) => {
     setItems((prev) =>
       prev.map((item) => (item.id === id ? { ...item, ...patch } : item))
@@ -135,7 +170,7 @@ export default function InventoryPage() {
       <CssBaseline />
       <Container sx={{ mt: 4 }}>
         <DashboardHeader title="XXX" onScrollToBottom={scrollToBottom} />
-        {searchTerm == "" ? (
+        {searchTerm === "" ? (
           <Typography variant="h4" gutterBottom>
             Current Inventory
           </Typography>
@@ -177,7 +212,7 @@ export default function InventoryPage() {
         </Stack>
         <div ref={bottomRef}>
           <AddItemForm onAdd={onAdd} nameRef={nameFieldRef} />
-        </div>{" "}
+        </div>
       </Container>
     </>
   );
