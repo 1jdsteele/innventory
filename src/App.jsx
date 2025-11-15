@@ -12,7 +12,8 @@ import { Route, BrowserRouter as Router, Routes } from "react-router-dom";
 // import AddInventory from "./AddInventory";
 import DatabaseExperimentPage from "./pages/DatabaseExperimentPage";
 import InventoryPage from "./pages/InventoryPage";
-
+import Login from "./pages/Login";
+import Signup from "./pages/Signup";
 function App() {
   const [count, setCount] = useState(0);
 
@@ -38,6 +39,15 @@ function App() {
           <Route
             path="/database-experiment"
             element={<DatabaseExperimentPage />}
+          />
+          
+          <Route
+            path="/login" 
+            element={<Login />}
+          />
+          <Route 
+            path="/signup"
+            element={<Signup />}
           />
         </Routes>
       </Container>
