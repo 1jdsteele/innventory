@@ -44,7 +44,7 @@ export default function InventoryPage() {
         setError(null);
         const { data, error } = await supabase
           .from("Inventory")
-          .select("id,item_name,item_quantity,organization,created_at")
+          .select("id,item_name,item_quantity,created_at")
           .order("id", { ascending: false });
         if (error) throw error;
         if (alive) {
@@ -53,7 +53,6 @@ export default function InventoryPage() {
             id: r.id,
             name: r.item_name,
             quantity: r.item_quantity,
-            organization: r.organization ?? null,
             createdAt: r.created_at ?? null,
           }));
           setItems(ui);
@@ -91,7 +90,7 @@ export default function InventoryPage() {
             // organization: org || null,
           },
         ])
-        .select("id,item_name,item_quantity,organization,created_at")
+        .select("id,item_name,item_quantity, created_at")
         .single();
 
       if (error) throw error;
@@ -101,7 +100,6 @@ export default function InventoryPage() {
         id: data.id,
         name: data.item_name,
         quantity: data.item_quantity,
-        organization: data.organization ?? null,
         createdAt: data.created_at ?? null,
       };
       setItems((prev) => [inserted, ...prev]);
