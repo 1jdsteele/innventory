@@ -10,7 +10,6 @@ import {
 } from "@mui/material";
 import { Route, BrowserRouter as Router, Routes } from "react-router-dom";
 // import AddInventory from "./AddInventory";
-import DatabaseExperimentPage from "./pages/DatabaseExperimentPage";
 import InventoryPage from "./pages/InventoryPage";
 import Login from "./pages/Login";
 import Signup from "./pages/Signup";
@@ -36,10 +35,6 @@ function App() {
       <Container sx={{ mt: 4 }}>
         <Routes>
           <Route path="/" element={<InventoryPage />} />
-          <Route
-            path="/database-experiment"
-            element={<DatabaseExperimentPage />}
-          />
 
           <Route path="/login" element={<Login />} />
           <Route path="/signup" element={<Signup />} />
