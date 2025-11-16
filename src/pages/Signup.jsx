@@ -14,6 +14,8 @@ import { supabase } from "../services/supabaseClient";
 export default function Signup() {
   const navigate = useNavigate();
   const [form, setForm] = useState({
+    firstName: "",
+    lastName: "",
     email: "",
     password: "",
     role: "",
@@ -28,10 +30,12 @@ export default function Signup() {
     e.preventDefault();
     setError("");
 
-    const { email, password, role, organization } = form;
+    const { firstName, lastName, email, password, role, organization } = form;
 
     // basic client-side validation
     if (
+      !firstName.trim() ||
+      !lastName.trim() ||
       !email.trim() ||
       !password.trim() ||
       !role.trim() ||
@@ -57,17 +61,14 @@ export default function Signup() {
 
       const user = signupData.user;
       if (!user) {
-        // This can happen if email confirmation is required and user must confirm first
-        // For your class project, you may want to disable "email confirmation" in Supabase Auth settings.
         throw new Error(
-          "Signup succeeded, but no user was returned. Check your Supabase Auth email confirmation settings."
+          "Signup succeeded, but no user was returned. Check your Supabase Auth settings."
         );
       }
 
       // 2) Find or create organization row
       const orgName = organization.trim();
 
-      // Try to find an existing organization by name
       const { data: existingOrg, error: orgSelectError } = await supabase
         .from("organizations")
         .select("id")
@@ -84,7 +85,6 @@ export default function Signup() {
       if (existingOrg) {
         orgId = existingOrg.id;
       } else {
-        // Insert a new organization if it doesn't exist
         const { data: newOrg, error: orgInsertError } = await supabase
           .from("organizations")
           .insert({ name: orgName })
@@ -98,19 +98,21 @@ export default function Signup() {
         orgId = newOrg.id;
       }
 
-      // 3) Create profile row linked to auth user + organization
-      const { error: profileError } = await supabase.from("profiles").insert({
+      // 3) Create employee row linked to auth user + organization
+      const { error: employeeError } = await supabase.from("employees").insert({
         id: user.id, // must match auth.users.id
         email: user.email,
+        first_name: firstName.trim(),
+        last_name: lastName.trim(),
         role: role.trim(),
         organization_id: orgId,
       });
 
-      if (profileError) {
-        throw profileError;
+      if (employeeError) {
+        throw employeeError;
       }
 
-      // 4) Done! Send user to login (or directly to Inventory if you prefer)
+      // 4) Done! Send user to login
       alert("Account created successfully! Please log in.");
       navigate("/login", { replace: true });
     } catch (err) {
@@ -128,6 +130,24 @@ export default function Signup() {
       </Typography>
 
       <Box component="form" onSubmit={handleSubmit}>
+        <TextField
+          fullWidth
+          margin="normal"
+          label="First Name"
+          name="firstName"
+          value={form.firstName}
+          onChange={onChange}
+        />
+
+        <TextField
+          fullWidth
+          margin="normal"
+          label="Last Name"
+          name="lastName"
+          value={form.lastName}
+          onChange={onChange}
+        />
+
         <TextField
           fullWidth
           margin="normal"

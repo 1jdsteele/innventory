@@ -1,12 +1,11 @@
+import CancelIcon from "@mui/icons-material/Cancel";
 import DeleteIcon from "@mui/icons-material/Delete";
 import EditIcon from "@mui/icons-material/Edit";
 import SaveIcon from "@mui/icons-material/Save";
-import CancelIcon from "@mui/icons-material/Cancel";
 import { IconButton, ListItem, ListItemText, TextField } from "@mui/material";
 import { useState } from "react";
 
-export default function ItemRow({ item, onUpdate, onDelete }) {
-  // HERE hein will add logic for editing
+export default function ItemRow({ item, onUpdate, onDelete, isManager }) {
   const [isEditing, setIsEditing] = useState(false);
   const [draftName, setDraftName] = useState(item.name);
   const [draftQty, setDraftQty] = useState(item.quantity);
@@ -26,9 +25,7 @@ export default function ItemRow({ item, onUpdate, onDelete }) {
   };
 
   return (
-    //HERE Hein will add ternary logic to have the list item we are editing go to "edit mode"
     <ListItem
-      // MUI prop that allows right-side icons
       secondaryAction={
         isEditing ? (
           <>
@@ -38,13 +35,9 @@ export default function ItemRow({ item, onUpdate, onDelete }) {
               onClick={handleSave}
               sx={{ mr: -0.5 }}
             >
-              
               <SaveIcon />
             </IconButton>
-            <IconButton 
-              aria-label="cancel"
-              edge="end"
-              onClick={handleCancel}>
+            <IconButton aria-label="cancel" edge="end" onClick={handleCancel}>
               <CancelIcon />
             </IconButton>
           </>
@@ -54,23 +47,31 @@ export default function ItemRow({ item, onUpdate, onDelete }) {
               aria-label="edit"
               edge="end"
               onClick={() => setIsEditing(true)}
-
             >
               <EditIcon />
             </IconButton>
-            <IconButton
-              aria-label="delete"
-              edge="end"
-              onClick={() => onDelete(item.id)}
-            >
-              <DeleteIcon />
-            </IconButton>
+            {isManager && (
+              <IconButton
+                aria-label="delete"
+                edge="end"
+                onClick={() => onDelete(item.id)}
+              >
+                <DeleteIcon />
+              </IconButton>
+            )}
           </>
         )
       }
     >
       {isEditing ? (
-        <div style={{ display: "flex", gap: "10px", width: "100%", paddingRight: "40px" }}>
+        <div
+          style={{
+            display: "flex",
+            gap: "10px",
+            width: "100%",
+            paddingRight: "40px",
+          }}
+        >
           <TextField
             label="Name"
             value={draftName}

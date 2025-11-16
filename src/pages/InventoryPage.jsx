@@ -8,134 +8,69 @@ import {
   Stack,
   Typography,
 } from "@mui/material";
-import { useEffect, useMemo, useRef, useState } from "react";
+import { useMemo, useRef, useState } from "react";
+// custom components
 import AddItemForm from "../components/AddItemForm";
 import DashboardHeader from "../components/DashboardHeader";
 import ItemsList from "../components/ItemsList";
 import SearchBar from "../components/SearchBar";
-import { supabase } from "../services/supabaseClient";
+
+// custom hooks
+import useCurrentEmployee from "../hooks/useCurrentEmployee";
+import useInventory from "../hooks/useInventory";
 
 export default function InventoryPage() {
-  const [items, setItems] = useState([]);
+  //++++++++++ state variables ++++++++++
   const [searchTerm, setSearchTerm] = useState("");
-  const [loading, setLoading] = useState(true);
-  const [saving, setSaving] = useState(false);
-  const [error, setError] = useState(null);
 
-  // ref to the bottom section (AddItemForm)
-  const bottomRef = useRef(null);
+  // ++++++++++ references
+  const addItemRef = useRef(null);
   const nameFieldRef = useRef(null);
 
-  const scrollToBottom = () => {
-    bottomRef.current?.scrollIntoView({ behavior: "smooth" });
-    console.log("hit it");
+  // employee/org context
+  const { orgId, isManager, authError, authLoading } = useCurrentEmployee();
+
+  // inventory data for this org
+  const {
+    items,
+    loading: inventoryLoading,
+    saving,
+    error: inventoryError,
+    addItem,
+    updateItemLocal,
+    deleteItem,
+  } = useInventory(orgId, isManager);
+
+  // combine auth + inventory states for display
+  const loading = authLoading || inventoryLoading;
+  const error = authError || inventoryError;
+
+  // scroll to the Add Item form and focus the first field
+  const scrollToAddItem = () => {
+    addItemRef.current?.scrollIntoView({ behavior: "smooth" });
     setTimeout(() => {
       nameFieldRef.current?.focus();
     }, 400);
-    console.log("hit the bottom");
   };
 
-  // READ: load rows on mount (newest first)
-  useEffect(() => {
-    let alive = true;
-    const load = async () => {
-      try {
-        setLoading(true);
-        setError(null);
-        const { data, error } = await supabase
-          .from("inventory")
-          .select("id,item_name,item_quantity,created_at")
-          .order("id", { ascending: false });
-        if (error) throw error;
-        if (alive) {
-          // map DB -> UI shape used by ItemsList/ItemRow
-          const ui = (data ?? []).map((r) => ({
-            id: r.id,
-            name: r.item_name,
-            quantity: r.item_quantity,
-            createdAt: r.created_at ?? null,
-          }));
-          setItems(ui);
-        }
-      } catch (err) {
-        console.error(err);
-        if (alive) setError(err.message);
-      } finally {
-        if (alive) setLoading(false);
-      }
-    };
-    load();
-    return () => {
-      alive = false;
-    };
-  }, []);
-
-  // CREATE: insert then prepend to list
-  const onAdd = async ({ name, quantity }) => {
-    const trimmed = String(name ?? "").trim();
-    const qtyNum = Number(quantity);
-    if (!trimmed || Number.isNaN(qtyNum)) return;
-
-    try {
-      setSaving(true);
-      setError(null);
-
-      const { data, error } = await supabase
-        .from("inventory")
-        .insert([
-          {
-            item_name: trimmed,
-            item_quantity: qtyNum,
-            // add organization if your form supports it:
-            // organization: org || null,
-          },
-        ])
-        .select("id,item_name,item_quantity, created_at")
-        .single();
-
-      if (error) throw error;
-
-      // map DB -> UI shape and prepend
-      const inserted = {
-        id: data.id,
-        name: data.item_name,
-        quantity: data.item_quantity,
-        createdAt: data.created_at ?? null,
-      };
-      setItems((prev) => [inserted, ...prev]);
-    } catch (err) {
-      console.error(err);
-      setError(err.message);
-    } finally {
-      setSaving(false);
-    }
-  };
-
-  // Local update/delete remain as-is (wire to Supabase later if you like)
-  const onUpdate = (id, patch) => {
-    setItems((prev) =>
-      prev.map((item) => (item.id === id ? { ...item, ...patch } : item))
-    );
-  };
-
-  const onDelete = (id) => {
-    setItems((prev) => prev.filter((item) => item.id !== id));
-  };
-
+  //how we show search items
   const filteredItems = useMemo(() => {
     const q = searchTerm.trim().toLowerCase();
     if (!q) return items;
     return items.filter((item) => item.name.toLowerCase().includes(q));
   }, [items, searchTerm]);
 
-  const hasItems = useMemo(() => filteredItems.length > 0, [filteredItems]);
+  const hasItems = filteredItems.length > 0;
 
   return (
     <>
       <CssBaseline />
       <Container sx={{ mt: 4 }}>
-        <DashboardHeader title="XXX" onScrollToBottom={scrollToBottom} />
-        {searchTerm == "" ? (
+        {/* our header with the buttons */}
+        <DashboardHeader onScrollToBottom={scrollToAddItem} />
+
+        {/*  correct title depending on search or not */}
+        {searchTerm === "" ? (
           <Typography variant="h4" gutterBottom>
             Current Inventory
           </Typography>
@@ -144,14 +79,18 @@ export default function InventoryPage() {
             Search results:
           </Typography>
         )}
+
+        {/* our custom search bar */}
         <Stack spacing={2} sx={{ mb: 3 }}>
           <SearchBar value={searchTerm} onChange={setSearchTerm} />
+
           {error && (
             <Alert severity="error" sx={{ mb: 2 }}>
               {error}
             </Alert>
           )}
 
+          {/* items list */}
           <Paper sx={{ mb: 3, p: 2, minHeight: 120 }}>
             {loading ? (
               <Stack direction="row" spacing={1} alignItems="center">
@@ -162,8 +101,9 @@ export default function InventoryPage() {
               <>
                 <ItemsList
                   items={filteredItems}
-                  onUpdate={onUpdate}
-                  onDelete={onDelete}
+                  onUpdate={updateItemLocal}
+                  onDelete={deleteItem}
+                  isManager={isManager}
                 />
                 <Divider sx={{ my: 2 }} />
                 <Typography variant="body2" color="text.secondary">
@@ -175,9 +115,11 @@ export default function InventoryPage() {
             )}
           </Paper>
         </Stack>
-        <div ref={bottomRef}>
-          <AddItemForm onAdd={onAdd} nameRef={nameFieldRef} />
-        </div>{" "}
+
+        {/* custom add items form */}
+        <div ref={addItemRef}>
+          <AddItemForm onAdd={addItem} nameRef={nameFieldRef} saving={saving} />
+        </div>
       </Container>
     </>
   );
