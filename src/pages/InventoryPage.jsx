@@ -16,19 +16,20 @@ import SearchBar from "../components/SearchBar";
 import { supabase } from "../services/supabaseClient";
 
 export default function InventoryPage() {
+  //++++++++++ state variables ++++++++++
   const [items, setItems] = useState([]);
   const [searchTerm, setSearchTerm] = useState("");
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState(null);
-
-  // org / employee context
   const [orgId, setOrgId] = useState(null);
+  const [isManager, setIsManager] = useState(false);
 
-  // ref to the bottom section (AddItemForm)
+  // ++++++++++ references
   const bottomRef = useRef(null);
   const nameFieldRef = useRef(null);
 
+  // should probably be renamed to scroll to add item as that is what this does. well, it also scrolls.
   const scrollToBottom = () => {
     bottomRef.current?.scrollIntoView({ behavior: "smooth" });
     setTimeout(() => {
@@ -36,7 +37,7 @@ export default function InventoryPage() {
     }, 400);
   };
 
-  // On mount: read currentEmployee from localStorage and extract orgId
+  // On mount: read currentEmployee from localStorage and extract orgId + role
   useEffect(() => {
     try {
       const raw = localStorage.getItem("currentEmployee");
@@ -52,6 +53,7 @@ export default function InventoryPage() {
         return;
       }
       setOrgId(emp.organizationId);
+      setIsManager(emp.role === "Manager");
     } catch (e) {
       console.error(e);
       setError("Failed to read employee info. Please log in again.");
@@ -146,15 +148,36 @@ export default function InventoryPage() {
     }
   };
 
-  // Local update/delete remain in-memory for now
+  // UPDATE: still local-only for now
   const onUpdate = (id, patch) => {
     setItems((prev) =>
       prev.map((item) => (item.id === id ? { ...item, ...patch } : item))
     );
   };
 
-  const onDelete = (id) => {
-    setItems((prev) => prev.filter((item) => item.id !== id));
+  // DELETE: only managers, and also delete in Supabase
+  const onDelete = async (id) => {
+    if (!isManager) {
+      setError("You do not have permission to delete items.");
+      return;
+    }
+
+    try {
+      setError(null);
+
+      const { error } = await supabase
+        .from("inventory")
+        .delete()
+        .eq("id", id)
+        .eq("organization_id", orgId);
+
+      if (error) throw error;
+
+      setItems((prev) => prev.filter((item) => item.id !== id));
+    } catch (err) {
+      console.error(err);
+      setError(err.message);
+    }
   };
 
   const filteredItems = useMemo(() => {
@@ -199,6 +222,7 @@ export default function InventoryPage() {
                   items={filteredItems}
                   onUpdate={onUpdate}
                   onDelete={onDelete}
+                  isManager={isManager}
                 />
                 <Divider sx={{ my: 2 }} />
                 <Typography variant="body2" color="text.secondary">
