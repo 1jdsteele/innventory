@@ -21,7 +21,7 @@ function App() {
       <CssBaseline /> {/* Resets browser default styles */}
       <AppBar position="static">
         <Toolbar>
-          <Typography variant="h6">Hilbert's Innventory</Typography>
+          <Typography variant="h6">Innventory</Typography>
         </Toolbar>
       </AppBar>
       {/* <Container sx={{ mt: 4 }}> */}
