@@ -10,7 +10,7 @@ export default function ItemsList({ items, onUpdate, onDelete, isManager }) {
           item={item}
           onUpdate={onUpdate}
           onDelete={onDelete}
-          isManager={isManager}
+          isManager={isManager} // 👈 pass through
         />
       ))}
     </List>
