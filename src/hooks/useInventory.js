@@ -1,4 +1,6 @@
 import { useEffect, useState } from "react";
+import { getManagerEmailsForOrg } from "../services/employees";
+import { sendLowStockEmail } from "../services/notifications";
 import { supabase } from "../services/supabaseClient";
 
 /**
@@ -38,7 +40,7 @@ export default function useInventory(orgId, isManager) {
 
         const { data, error: supaError } = await supabase
           .from("inventory")
-          .select("id,item_name,item_quantity,low_threshold,created_at") // 👈 include low_threshold
+          .select("id,item_name,item_quantity,low_threshold,created_at")
           .eq("organization_id", orgId)
           .order("id", { ascending: false });
 
@@ -50,7 +52,7 @@ export default function useInventory(orgId, isManager) {
           id: r.id,
           name: r.item_name,
           quantity: r.item_quantity,
-          lowThreshold: r.low_threshold ?? 0, // 👈 expose to UI as camelCase
+          lowThreshold: r.low_threshold ?? 0,
           createdAt: r.created_at ?? null,
         }));
 
@@ -163,6 +165,11 @@ export default function useInventory(orgId, isManager) {
       setSaving(true);
       setError(null);
 
+      // Snapshot the current item before we change anything
+      const prevItem = items.find((item) => item.id === id) || null;
+      const prevQuantity = prevItem?.quantity ?? null;
+      const prevLowThreshold = prevItem?.lowThreshold ?? null;
+
       const { data, error: supaError } = await supabase
         .from("inventory")
         .update(updates)
@@ -182,6 +189,40 @@ export default function useInventory(orgId, isManager) {
       };
 
       setItems((prev) => prev.map((item) => (item.id === id ? updated : item)));
+
+      // ---- LOW-STOCK EMAIL LOGIC ----
+      try {
+        const lowThreshold = updated.lowThreshold ?? 0;
+        const effectivePrevThreshold = prevLowThreshold ?? lowThreshold;
+
+        const crossedBelow =
+          lowThreshold > 0 &&
+          prevQuantity != null &&
+          prevQuantity > effectivePrevThreshold &&
+          updated.quantity <= lowThreshold;
+
+        if (crossedBelow) {
+          const managerEmails = await getManagerEmailsForOrg(orgId);
+
+          if (managerEmails.length === 0) {
+            console.warn(
+              "Low-stock alert not sent: no manager emails found for org",
+              orgId
+            );
+          } else {
+            console.log("Sending low-stock email to:", managerEmails);
+            await sendLowStockEmail({
+              itemName: updated.name,
+              quantity: updated.quantity,
+              lowThreshold,
+              toEmails: managerEmails,
+              orgName: "Innfinite Hotel", // JAKE, FIXME, GRAB ORG NAME
+            });
+          }
+        }
+      } catch (notifyErr) {
+        console.error("Failed to send low-stock notification", notifyErr);
+      }
     } catch (err) {
       console.error(err);
       setError(err.message);

@@ -19,6 +19,9 @@ import SearchBar from "../components/SearchBar";
 import useCurrentEmployee from "../hooks/useCurrentEmployee";
 import useInventory from "../hooks/useInventory";
 
+//services
+import { sendLowStockEmail } from "../services/notifications";
+
 export default function InventoryPage() {
   //++++++++++ state variables ++++++++++
   const [searchTerm, setSearchTerm] = useState("");
@@ -62,13 +65,25 @@ export default function InventoryPage() {
 
   const hasItems = filteredItems.length > 0;
 
+  //+++++++++ testing emailing +++++++++
+  const handleSendTestEmail = async () => {
+    const result = await sendLowStockEmail({
+      itemName: "Test Towels (UI)",
+      quantity: 2,
+      lowThreshold: 5,
+      toEmail: "jdsteelepersonal@gmail.com",
+      orgName: "Innfinite Hotel",
+    });
+
+    console.log("Email result:", result);
+  };
+
   return (
     <>
       <CssBaseline />
       <Container sx={{ mt: 4 }}>
         {/* our header with the buttons */}
         <DashboardHeader onScrollToBottom={scrollToAddItem} />
-
         {/*  correct title depending on search or not */}
         {searchTerm === "" ? (
           <Typography variant="h4" gutterBottom>
