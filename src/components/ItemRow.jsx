@@ -9,12 +9,27 @@ export default function ItemRow({ item, onUpdate, onDelete, isManager }) {
   const [isEditing, setIsEditing] = useState(false);
   const [draftName, setDraftName] = useState(item.name);
   const [draftQty, setDraftQty] = useState(item.quantity);
+  const [draftLowThreshold, setDraftLowThreshold] = useState(
+    item.lowThreshold ?? 0
+  );
 
   const handleSave = () => {
     const name = draftName.trim();
     const quantity = Number(draftQty);
     if (!name || Number.isNaN(quantity)) return;
-    onUpdate(item.id, { name, quantity });
+
+    const patch = { name, quantity };
+
+    if (isManager) {
+      const lowThresholdNum = Number(draftLowThreshold);
+      if (Number.isNaN(lowThresholdNum) || lowThresholdNum < 0) {
+        // simple guard; you could show a toast instead
+        return;
+      }
+      patch.lowThreshold = lowThresholdNum;
+    }
+
+    onUpdate(item.id, patch);
     setIsEditing(false);
   };
 
@@ -22,6 +37,7 @@ export default function ItemRow({ item, onUpdate, onDelete, isManager }) {
     setIsEditing(false);
     setDraftName(item.name);
     setDraftQty(item.quantity);
+    setDraftLowThreshold(item.lowThreshold ?? 0);
   };
 
   return (
@@ -50,15 +66,13 @@ export default function ItemRow({ item, onUpdate, onDelete, isManager }) {
             >
               <EditIcon />
             </IconButton>
-            {isManager && (
-              <IconButton
-                aria-label="delete"
-                edge="end"
-                onClick={() => onDelete(item.id)}
-              >
-                <DeleteIcon />
-              </IconButton>
-            )}
+            <IconButton
+              aria-label="delete"
+              edge="end"
+              onClick={() => onDelete(item.id)}
+            >
+              <DeleteIcon />
+            </IconButton>
           </>
         )
       }
@@ -85,7 +99,18 @@ export default function ItemRow({ item, onUpdate, onDelete, isManager }) {
             value={draftQty}
             onChange={(e) => setDraftQty(e.target.value)}
             size="small"
+            sx={{ maxWidth: 120 }}
           />
+          {isManager && (
+            <TextField
+              label="Low threshold"
+              type="number"
+              value={draftLowThreshold}
+              onChange={(e) => setDraftLowThreshold(e.target.value)}
+              size="small"
+              sx={{ maxWidth: 140 }}
+            />
+          )}
         </div>
       ) : (
         <ListItemText

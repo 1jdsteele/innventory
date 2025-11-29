@@ -1,4 +1,3 @@
-// src/hooks/useInventory.js
 import { useEffect, useState } from "react";
 import { supabase } from "../services/supabaseClient";
 
@@ -7,12 +6,12 @@ import { supabase } from "../services/supabaseClient";
  * - loading inventory from Supabase
  * - inserting new items
  * - deleting items (with manager check)
- * - local-only updates
+ * - persisted updates (including low_threshold)
  *
  * Returns:
  * - items, loading, saving, error
  * - addItem({ name, quantity })
- * - updateItemLocal(id, patch)
+ * - updateItem(id, patch)
  * - deleteItem(id)
  * - setError (if caller wants to override/clear)
  */
@@ -25,7 +24,6 @@ export default function useInventory(orgId, isManager) {
   // READ: load rows for this organization (newest first)
   useEffect(() => {
     if (!orgId) {
-      // No org yet — clear items & loading state
       setItems([]);
       setLoading(false);
       return;
@@ -40,7 +38,7 @@ export default function useInventory(orgId, isManager) {
 
         const { data, error: supaError } = await supabase
           .from("inventory")
-          .select("id,item_name,item_quantity,created_at")
+          .select("id,item_name,item_quantity,low_threshold,created_at") // 👈 include low_threshold
           .eq("organization_id", orgId)
           .order("id", { ascending: false });
 
@@ -52,6 +50,7 @@ export default function useInventory(orgId, isManager) {
           id: r.id,
           name: r.item_name,
           quantity: r.item_quantity,
+          lowThreshold: r.low_threshold ?? 0, // 👈 expose to UI as camelCase
           createdAt: r.created_at ?? null,
         }));
 
@@ -94,9 +93,11 @@ export default function useInventory(orgId, isManager) {
             item_name: trimmed,
             item_quantity: qtyNum,
             organization_id: orgId,
+            // you *can* omit this and let the DB default to 0, but it's explicit:
+            low_threshold: 0,
           },
         ])
-        .select("id,item_name,item_quantity,created_at")
+        .select("id,item_name,item_quantity,low_threshold,created_at")
         .single();
 
       if (supaError) throw supaError;
@@ -105,6 +106,7 @@ export default function useInventory(orgId, isManager) {
         id: data.id,
         name: data.item_name,
         quantity: data.item_quantity,
+        lowThreshold: data.low_threshold ?? 0,
         createdAt: data.created_at ?? null,
       };
 
@@ -144,6 +146,16 @@ export default function useInventory(orgId, isManager) {
       updates.item_quantity = qtyNum;
     }
 
+    // only managers can update low_threshold
+    if (patch.lowThreshold !== undefined && isManager) {
+      const thresholdNum = Number(patch.lowThreshold);
+      if (Number.isNaN(thresholdNum) || thresholdNum < 0) {
+        setError("Low threshold must be a non-negative number.");
+        return;
+      }
+      updates.low_threshold = thresholdNum;
+    }
+
     // Nothing to update
     if (Object.keys(updates).length === 0) return;
 
@@ -156,7 +168,7 @@ export default function useInventory(orgId, isManager) {
         .update(updates)
         .eq("id", id)
         .eq("organization_id", orgId)
-        .select("id,item_name,item_quantity,created_at")
+        .select("id,item_name,item_quantity,low_threshold,created_at")
         .single();
 
       if (supaError) throw supaError;
@@ -165,10 +177,10 @@ export default function useInventory(orgId, isManager) {
         id: data.id,
         name: data.item_name,
         quantity: data.item_quantity,
+        lowThreshold: data.low_threshold ?? 0,
         createdAt: data.created_at ?? null,
       };
 
-      // Update local list with the saved row
       setItems((prev) => prev.map((item) => (item.id === id ? updated : item)));
     } catch (err) {
       console.error(err);
