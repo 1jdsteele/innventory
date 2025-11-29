@@ -117,11 +117,65 @@ export default function useInventory(orgId, isManager) {
     }
   };
 
-  // UPDATE: local-only for now
-  const updateItemLocal = (id, patch) => {
-    setItems((prev) =>
-      prev.map((item) => (item.id === id ? { ...item, ...patch } : item))
-    );
+  // UPDATE: persist to Supabase and then update local state
+  const updateItem = async (id, patch) => {
+    if (!orgId) {
+      setError("Missing organization. Please log in again.");
+      return;
+    }
+
+    // Map UI patch -> DB columns
+    const updates = {};
+    if (patch.name !== undefined) {
+      const trimmedName = String(patch.name ?? "").trim();
+      if (!trimmedName) {
+        setError("Item name cannot be empty.");
+        return;
+      }
+      updates.item_name = trimmedName;
+    }
+
+    if (patch.quantity !== undefined) {
+      const qtyNum = Number(patch.quantity);
+      if (Number.isNaN(qtyNum)) {
+        setError("Quantity must be a number.");
+        return;
+      }
+      updates.item_quantity = qtyNum;
+    }
+
+    // Nothing to update
+    if (Object.keys(updates).length === 0) return;
+
+    try {
+      setSaving(true);
+      setError(null);
+
+      const { data, error: supaError } = await supabase
+        .from("inventory")
+        .update(updates)
+        .eq("id", id)
+        .eq("organization_id", orgId)
+        .select("id,item_name,item_quantity,created_at")
+        .single();
+
+      if (supaError) throw supaError;
+
+      const updated = {
+        id: data.id,
+        name: data.item_name,
+        quantity: data.item_quantity,
+        createdAt: data.created_at ?? null,
+      };
+
+      // Update local list with the saved row
+      setItems((prev) => prev.map((item) => (item.id === id ? updated : item)));
+    } catch (err) {
+      console.error(err);
+      setError(err.message);
+    } finally {
+      setSaving(false);
+    }
   };
 
   // DELETE: only managers, and also delete in Supabase
@@ -160,7 +214,7 @@ export default function useInventory(orgId, isManager) {
     saving,
     error,
     addItem,
-    updateItemLocal,
+    updateItem,
     deleteItem,
     setError,
   };

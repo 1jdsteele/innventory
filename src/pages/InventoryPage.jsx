@@ -37,7 +37,7 @@ export default function InventoryPage() {
     saving,
     error: inventoryError,
     addItem,
-    updateItemLocal,
+    updateItem,
     deleteItem,
   } = useInventory(orgId, isManager);
 
@@ -101,10 +101,11 @@ export default function InventoryPage() {
               <>
                 <ItemsList
                   items={filteredItems}
-                  onUpdate={updateItemLocal}
+                  onUpdate={updateItem}
                   onDelete={deleteItem}
                   isManager={isManager}
                 />
+
                 <Divider sx={{ my: 2 }} />
                 <Typography variant="body2" color="text.secondary">
                   Total items: {items.length}
