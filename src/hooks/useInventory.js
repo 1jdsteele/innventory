@@ -1,7 +1,12 @@
 import { useEffect, useState } from "react";
 import { getManagerEmailsForOrg } from "../services/employees";
+import {
+  deleteInventoryItem,
+  fetchInventoryForOrg,
+  insertInventoryItem,
+  updateInventoryItem,
+} from "../services/inventory";
 import { sendLowStockEmail } from "../services/notifications";
-import { supabase } from "../services/supabaseClient";
 
 /**
  * Handles all inventory data concerns for a given organization:
@@ -17,7 +22,7 @@ import { supabase } from "../services/supabaseClient";
  * - deleteItem(id)
  * - setError (if caller wants to override/clear)
  */
-export default function useInventory(orgId, isManager) {
+export default function useInventory(orgId, isManager, orgName) {
   const [items, setItems] = useState([]);
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
@@ -38,11 +43,7 @@ export default function useInventory(orgId, isManager) {
         setLoading(true);
         setError(null);
 
-        const { data, error: supaError } = await supabase
-          .from("inventory")
-          .select("id,item_name,item_quantity,low_threshold,created_at")
-          .eq("organization_id", orgId)
-          .order("id", { ascending: false });
+        const { data, error: supaError } = await fetchInventoryForOrg(orgId);
 
         if (supaError) throw supaError;
 
@@ -88,19 +89,10 @@ export default function useInventory(orgId, isManager) {
       setSaving(true);
       setError(null);
 
-      const { data, error: supaError } = await supabase
-        .from("inventory")
-        .insert([
-          {
-            item_name: trimmed,
-            item_quantity: qtyNum,
-            organization_id: orgId,
-            // you *can* omit this and let the DB default to 0, but it's explicit:
-            low_threshold: 0,
-          },
-        ])
-        .select("id,item_name,item_quantity,low_threshold,created_at")
-        .single();
+      const { data, error: supaError } = await insertInventoryItem(orgId, {
+        name,
+        quantity,
+      });
 
       if (supaError) throw supaError;
 
@@ -170,13 +162,11 @@ export default function useInventory(orgId, isManager) {
       const prevQuantity = prevItem?.quantity ?? null;
       const prevLowThreshold = prevItem?.lowThreshold ?? null;
 
-      const { data, error: supaError } = await supabase
-        .from("inventory")
-        .update(updates)
-        .eq("id", id)
-        .eq("organization_id", orgId)
-        .select("id,item_name,item_quantity,low_threshold,created_at")
-        .single();
+      const { data, error: supaError } = await updateInventoryItem(
+        orgId,
+        id,
+        updates
+      );
 
       if (supaError) throw supaError;
 
@@ -196,7 +186,6 @@ export default function useInventory(orgId, isManager) {
         const effectivePrevThreshold = prevLowThreshold ?? lowThreshold;
 
         const crossedBelow =
-          lowThreshold > 0 &&
           prevQuantity != null &&
           prevQuantity > effectivePrevThreshold &&
           updated.quantity <= lowThreshold;
@@ -210,13 +199,15 @@ export default function useInventory(orgId, isManager) {
               orgId
             );
           } else {
+            // in case you need to debug ;)
             console.log("Sending low-stock email to:", managerEmails);
+            console.log("Low-stock email orgName:", orgName);
             await sendLowStockEmail({
               itemName: updated.name,
               quantity: updated.quantity,
               lowThreshold,
               toEmails: managerEmails,
-              orgName: "Innfinite Hotel", // JAKE, FIXME, GRAB ORG NAME
+              orgName,
             });
           }
         }
@@ -246,11 +237,7 @@ export default function useInventory(orgId, isManager) {
     try {
       setError(null);
 
-      const { error: supaError } = await supabase
-        .from("inventory")
-        .delete()
-        .eq("id", id)
-        .eq("organization_id", orgId);
+      const { error: supaError } = await deleteInventoryItem(orgId, id);
 
       if (supaError) throw supaError;
 

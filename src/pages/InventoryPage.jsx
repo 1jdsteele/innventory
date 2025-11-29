@@ -20,7 +20,6 @@ import useCurrentEmployee from "../hooks/useCurrentEmployee";
 import useInventory from "../hooks/useInventory";
 
 //services
-import { sendLowStockEmail } from "../services/notifications";
 
 export default function InventoryPage() {
   //++++++++++ state variables ++++++++++
@@ -31,7 +30,8 @@ export default function InventoryPage() {
   const nameFieldRef = useRef(null);
 
   // employee/org context
-  const { orgId, isManager, authError, authLoading } = useCurrentEmployee();
+  const { orgId, orgName, isManager, authError, authLoading } =
+    useCurrentEmployee();
 
   // inventory data for this org
   const {
@@ -42,7 +42,7 @@ export default function InventoryPage() {
     addItem,
     updateItem,
     deleteItem,
-  } = useInventory(orgId, isManager);
+  } = useInventory(orgId, isManager, orgName);
 
   // combine auth + inventory states for display
   const loading = authLoading || inventoryLoading;
@@ -65,19 +65,6 @@ export default function InventoryPage() {
 
   const hasItems = filteredItems.length > 0;
 
-  //+++++++++ testing emailing +++++++++
-  const handleSendTestEmail = async () => {
-    const result = await sendLowStockEmail({
-      itemName: "Test Towels (UI)",
-      quantity: 2,
-      lowThreshold: 5,
-      toEmail: "jdsteelepersonal@gmail.com",
-      orgName: "Innfinite Hotel",
-    });
-
-    console.log("Email result:", result);
-  };
-
   return (
     <>
       <CssBaseline />
@@ -87,7 +74,7 @@ export default function InventoryPage() {
         {/*  correct title depending on search or not */}
         {searchTerm === "" ? (
           <Typography variant="h4" gutterBottom>
-            Current Inventory
+            {orgName ? `${orgName} Inventory` : "Current Invnetory"}
           </Typography>
         ) : (
           <Typography variant="h4" gutterBottom>

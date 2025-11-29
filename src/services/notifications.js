@@ -1,3 +1,4 @@
+// TODO get rid of debugging logs
 import { supabase } from "./supabaseClient";
 
 /**
