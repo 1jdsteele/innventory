@@ -1,8 +1,13 @@
-import CancelIcon from "@mui/icons-material/Cancel";
 import DeleteIcon from "@mui/icons-material/Delete";
 import EditIcon from "@mui/icons-material/Edit";
-import SaveIcon from "@mui/icons-material/Save";
-import { IconButton, ListItem, ListItemText, TextField } from "@mui/material";
+import {
+  Button,
+  IconButton,
+  ListItem,
+  ListItemText,
+  Stack,
+  TextField,
+} from "@mui/material";
 import { useState } from "react";
 
 export default function ItemRow({ item, onUpdate, onDelete, isManager }) {
@@ -42,22 +47,9 @@ export default function ItemRow({ item, onUpdate, onDelete, isManager }) {
 
   return (
     <ListItem
+      alignItems="flex-start"
       secondaryAction={
-        isEditing ? (
-          <>
-            <IconButton
-              aria-label="save"
-              edge="end"
-              onClick={handleSave}
-              sx={{ mr: -0.5 }}
-            >
-              <SaveIcon />
-            </IconButton>
-            <IconButton aria-label="cancel" edge="end" onClick={handleCancel}>
-              <CancelIcon />
-            </IconButton>
-          </>
-        ) : (
+        isEditing ? null : (
           <>
             <IconButton
               aria-label="edit"
@@ -78,14 +70,7 @@ export default function ItemRow({ item, onUpdate, onDelete, isManager }) {
       }
     >
       {isEditing ? (
-        <div
-          style={{
-            display: "flex",
-            gap: "10px",
-            width: "100%",
-            paddingRight: "40px",
-          }}
-        >
+        <Stack spacing={2} sx={{ width: "100%", pr: 1, py: 1 }}>
           <TextField
             label="Name"
             value={draftName}
@@ -99,7 +84,7 @@ export default function ItemRow({ item, onUpdate, onDelete, isManager }) {
             value={draftQty}
             onChange={(e) => setDraftQty(e.target.value)}
             size="small"
-            sx={{ maxWidth: 120 }}
+            fullWidth
           />
           {isManager && (
             <TextField
@@ -108,10 +93,19 @@ export default function ItemRow({ item, onUpdate, onDelete, isManager }) {
               value={draftLowThreshold}
               onChange={(e) => setDraftLowThreshold(e.target.value)}
               size="small"
-              sx={{ maxWidth: 140 }}
+              fullWidth
             />
           )}
-        </div>
+
+          <Stack direction="row" spacing={1}>
+            <Button variant="contained" fullWidth onClick={handleSave}>
+              Save
+            </Button>
+            <Button variant="outlined" fullWidth onClick={handleCancel}>
+              Cancel
+            </Button>
+          </Stack>
+        </Stack>
       ) : (
         <ListItemText
           primary={item.name}
