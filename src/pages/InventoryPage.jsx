@@ -19,6 +19,8 @@ import SearchBar from "../components/SearchBar";
 import useCurrentEmployee from "../hooks/useCurrentEmployee";
 import useInventory from "../hooks/useInventory";
 
+//services
+
 export default function InventoryPage() {
   //++++++++++ state variables ++++++++++
   const [searchTerm, setSearchTerm] = useState("");
@@ -28,7 +30,8 @@ export default function InventoryPage() {
   const nameFieldRef = useRef(null);
 
   // employee/org context
-  const { orgId, isManager, authError, authLoading } = useCurrentEmployee();
+  const { orgId, orgName, isManager, authError, authLoading } =
+    useCurrentEmployee();
 
   // inventory data for this org
   const {
@@ -39,7 +42,7 @@ export default function InventoryPage() {
     addItem,
     updateItem,
     deleteItem,
-  } = useInventory(orgId, isManager);
+  } = useInventory(orgId, isManager, orgName);
 
   // combine auth + inventory states for display
   const loading = authLoading || inventoryLoading;
@@ -68,11 +71,10 @@ export default function InventoryPage() {
       <Container sx={{ mt: 4 }}>
         {/* our header with the buttons */}
         <DashboardHeader onScrollToBottom={scrollToAddItem} />
-
         {/*  correct title depending on search or not */}
         {searchTerm === "" ? (
           <Typography variant="h4" gutterBottom>
-            Current Inventory
+            {orgName ? `${orgName} Inventory` : "Current Invnetory"}
           </Typography>
         ) : (
           <Typography variant="h4" gutterBottom>

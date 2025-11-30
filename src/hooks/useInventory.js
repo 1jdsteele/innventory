@@ -1,5 +1,12 @@
 import { useEffect, useState } from "react";
-import { supabase } from "../services/supabaseClient";
+import { getManagerEmailsForOrg } from "../services/employees";
+import {
+  deleteInventoryItem,
+  fetchInventoryForOrg,
+  insertInventoryItem,
+  updateInventoryItem,
+} from "../services/inventory";
+import { sendLowStockEmail } from "../services/notifications";
 
 /**
  * Handles all inventory data concerns for a given organization:
@@ -15,7 +22,7 @@ import { supabase } from "../services/supabaseClient";
  * - deleteItem(id)
  * - setError (if caller wants to override/clear)
  */
-export default function useInventory(orgId, isManager) {
+export default function useInventory(orgId, isManager, orgName) {
   const [items, setItems] = useState([]);
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
@@ -36,11 +43,7 @@ export default function useInventory(orgId, isManager) {
         setLoading(true);
         setError(null);
 
-        const { data, error: supaError } = await supabase
-          .from("inventory")
-          .select("id,item_name,item_quantity,low_threshold,created_at") // 👈 include low_threshold
-          .eq("organization_id", orgId)
-          .order("id", { ascending: false });
+        const { data, error: supaError } = await fetchInventoryForOrg(orgId);
 
         if (supaError) throw supaError;
 
@@ -50,7 +53,7 @@ export default function useInventory(orgId, isManager) {
           id: r.id,
           name: r.item_name,
           quantity: r.item_quantity,
-          lowThreshold: r.low_threshold ?? 0, // 👈 expose to UI as camelCase
+          lowThreshold: r.low_threshold ?? 0,
           createdAt: r.created_at ?? null,
         }));
 
@@ -86,19 +89,10 @@ export default function useInventory(orgId, isManager) {
       setSaving(true);
       setError(null);
 
-      const { data, error: supaError } = await supabase
-        .from("inventory")
-        .insert([
-          {
-            item_name: trimmed,
-            item_quantity: qtyNum,
-            organization_id: orgId,
-            // you *can* omit this and let the DB default to 0, but it's explicit:
-            low_threshold: 0,
-          },
-        ])
-        .select("id,item_name,item_quantity,low_threshold,created_at")
-        .single();
+      const { data, error: supaError } = await insertInventoryItem(orgId, {
+        name,
+        quantity,
+      });
 
       if (supaError) throw supaError;
 
@@ -163,13 +157,16 @@ export default function useInventory(orgId, isManager) {
       setSaving(true);
       setError(null);
 
-      const { data, error: supaError } = await supabase
-        .from("inventory")
-        .update(updates)
-        .eq("id", id)
-        .eq("organization_id", orgId)
-        .select("id,item_name,item_quantity,low_threshold,created_at")
-        .single();
+      // Snapshot the current item before we change anything
+      const prevItem = items.find((item) => item.id === id) || null;
+      const prevQuantity = prevItem?.quantity ?? null;
+      const prevLowThreshold = prevItem?.lowThreshold ?? null;
+
+      const { data, error: supaError } = await updateInventoryItem(
+        orgId,
+        id,
+        updates
+      );
 
       if (supaError) throw supaError;
 
@@ -182,6 +179,41 @@ export default function useInventory(orgId, isManager) {
       };
 
       setItems((prev) => prev.map((item) => (item.id === id ? updated : item)));
+
+      // ---- LOW-STOCK EMAIL LOGIC ----
+      try {
+        const lowThreshold = updated.lowThreshold ?? 0;
+        const effectivePrevThreshold = prevLowThreshold ?? lowThreshold;
+
+        const crossedBelow =
+          prevQuantity != null &&
+          prevQuantity > effectivePrevThreshold &&
+          updated.quantity <= lowThreshold;
+
+        if (crossedBelow) {
+          const managerEmails = await getManagerEmailsForOrg(orgId);
+
+          if (managerEmails.length === 0) {
+            console.warn(
+              "Low-stock alert not sent: no manager emails found for org",
+              orgId
+            );
+          } else {
+            // in case you need to debug ;)
+            // console.log("Sending low-stock email to:", managerEmails);
+            // console.log("Low-stock email orgName:", orgName);
+            await sendLowStockEmail({
+              itemName: updated.name,
+              quantity: updated.quantity,
+              lowThreshold,
+              toEmails: managerEmails,
+              orgName,
+            });
+          }
+        }
+      } catch (notifyErr) {
+        console.error("Failed to send low-stock notification", notifyErr);
+      }
     } catch (err) {
       console.error(err);
       setError(err.message);
@@ -205,11 +237,7 @@ export default function useInventory(orgId, isManager) {
     try {
       setError(null);
 
-      const { error: supaError } = await supabase
-        .from("inventory")
-        .delete()
-        .eq("id", id)
-        .eq("organization_id", orgId);
+      const { error: supaError } = await deleteInventoryItem(orgId, id);
 
       if (supaError) throw supaError;
 
