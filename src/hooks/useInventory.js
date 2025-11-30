@@ -200,8 +200,8 @@ export default function useInventory(orgId, isManager, orgName) {
             );
           } else {
             // in case you need to debug ;)
-            console.log("Sending low-stock email to:", managerEmails);
-            console.log("Low-stock email orgName:", orgName);
+            // console.log("Sending low-stock email to:", managerEmails);
+            // console.log("Low-stock email orgName:", orgName);
             await sendLowStockEmail({
               itemName: updated.name,
               quantity: updated.quantity,

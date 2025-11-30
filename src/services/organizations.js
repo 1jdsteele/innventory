@@ -6,7 +6,7 @@ export async function getOrgNameById(orgId) {
     return null;
   }
 
-  console.log("[getOrgNameById] fetching for orgId:", orgId);
+  // console.log("[getOrgNameById] fetching for orgId:", orgId);
 
   const { data, error } = await supabase
     .from("organizations")
@@ -14,7 +14,7 @@ export async function getOrgNameById(orgId) {
     .eq("id", orgId)
     .single();
 
-  console.log("[getOrgNameById] Supabase response:", { data, error });
+  // console.log("[getOrgNameById] Supabase response:", { data, error });
 
   if (error) {
     console.error("Error fetching organization name:", error);

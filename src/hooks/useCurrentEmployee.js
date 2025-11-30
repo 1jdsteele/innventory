@@ -38,8 +38,8 @@ export default function useCurrentEmployee() {
         const emp = JSON.parse(raw);
 
         //debugging :)
-        console.log("currentEmployee from localStorage:", emp);
-        console.log("organizationId from snapshot:", emp.organizationId);
+        // console.log("currentEmployee from localStorage:", emp);
+        // console.log("organizationId from snapshot:", emp.organizationId);
 
         if (!emp.organizationId) {
           if (alive) {
@@ -53,9 +53,9 @@ export default function useCurrentEmployee() {
         setOrgId(emp.organizationId);
         setIsManager(emp.role === "Manager");
 
-        // 🔹 fetch org name from Supabase via service
+        //fetch org name from Supabase via service
         const name = await getOrgNameById(emp.organizationId);
-        console.log("getOrgNameById returned:", name);
+        // console.log("getOrgNameById returned:", name);
         if (alive && name) {
           setOrgName(name);
         }
