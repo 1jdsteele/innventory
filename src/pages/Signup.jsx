@@ -177,7 +177,8 @@ export default function Signup() {
           onChange={onChange}
         >
           <MenuItem value="Employee">Employee</MenuItem>
-          <MenuItem value="Manager">Manager</MenuItem>
+          {/* only allowing employees right now because of Resend issue */}
+          {/* <MenuItem value="Manager">Manager</MenuItem> */}
         </TextField>
 
         <TextField
